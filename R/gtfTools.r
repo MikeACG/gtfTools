@@ -1,8 +1,4 @@
-require(data.table)
-require(GenomicRanges)
-require(IRanges)
-require(Biostrings)
-
+#' @export
 infoExtract <- function(gtf, infoColName, key, type) {
 
     n <- length(key)
@@ -10,7 +6,7 @@ infoExtract <- function(gtf, infoColName, key, type) {
 
     # parse info into dataframe keeping track of feature index
     info <- strsplit(gtf[[infoColName]], ";")
-    infodt <- data.table(
+    infodt <- data.table::data.table(
         info = unlist(info),
         idx = unlist(mapply(function(v, i) rep(i, length(v)), info, 1:length(info)))
     )
@@ -61,7 +57,8 @@ getTag <- function(infodt, tag, nfeatures) {
 
 }
 
-# gets features that appear in the mRNA between the start and stop codon (inclusive) in transcription order
+#' gets features that appear in the mRNA between the start and stop codon (inclusive) in transcription order
+#' @export
 cdsfy <- function(gtf) {
 
     gtfFilter <- gtf[Feature == "CDS" | Feature == "start_codon" | Feature == "stop_codon"]
@@ -70,15 +67,16 @@ cdsfy <- function(gtf) {
         .dt <- split(gtfStrand[[s]], gtfStrand[[s]]$Chromosome)
         if (s == "+") .dt <- lapply(.dt, function(x) x[order(Start_Position)])
         if (s == "-") .dt <- lapply(.dt, function(x) x[order(Start_Position, decreasing = TRUE)])
-        rbindlist(.dt)
+        data.table::rbindlist(.dt)
     })
 
-    gtfMrna <- rbindlist(gtfStrand)
+    gtfMrna <- data.table::rbindlist(gtfStrand)
     return(gtfMrna)
 
 }
 
-# gets features that get transcribed to RNA in transcription order
+#' gets features that get transcribed to RNA in transcription order
+#' @export
 rnaify <- function(gtf, mrnaOnly = FALSE) {
     
     if (mrnaOnly) {
@@ -97,15 +95,16 @@ rnaify <- function(gtf, mrnaOnly = FALSE) {
         .dt <- split(gtfStrand[[s]], gtfStrand[[s]]$Chromosome)
         if (s == "+") .dt <- lapply(.dt, function(x) x[order(Start_Position)])
         if (s == "-") .dt <- lapply(.dt, function(x) x[order(Start_Position, decreasing = TRUE)])
-        rbindlist(.dt)
+        data.table::rbindlist(.dt)
     })
 
-    gtfMrna <- rbindlist(gtfStrand)
+    gtfMrna <- data.table::rbindlist(gtfStrand)
     return(gtfMrna)
 
 }
 
-# gets the 5'UTR of a mRNA gtf
+#' gets the 5'UTR of a mRNA gtf
+#' @export
 get5utr <- function(mrnaGtf) {
 
     # split gtf by strand
@@ -129,7 +128,8 @@ get5utr <- function(mrnaGtf) {
 
 }
 
-# gets the 5'UTR of a mRNA gtf
+#' gets the 5'UTR of a mRNA gtf
+#' @export
 get3utr <- function(mrnaGtf) {
 
     # split gtf by strand
@@ -149,30 +149,32 @@ get3utr <- function(mrnaGtf) {
         }
     )
 
-    return(rbindlist(utr3Gtf))
+    return(data.table::rbindlist(utr3Gtf))
 
 }
 
-# gets the introns of a mRNA gtf
+#' gets the introns of a mRNA gtf
+#' @export
 getIntron <- function(mrnaGtf) {
 
     mrnaGtf$transcript_id <- factor(mrnaGtf$transcript_id, levels = unique(mrnaGtf$transcript_id))
     exonSeq <- paste(mrnaGtf$Chromosome, mrnaGtf$transcript_id, sep = "_")
-    exon <- GRanges(exonSeq, IRanges(mrnaGtf$Start_Position, mrnaGtf$End_Position))
+    exon <- GenomicRanges::GRanges(exonSeq, IRanges::IRanges(mrnaGtf$Start_Position, mrnaGtf$End_Position))
     trStart <- tapply(mrnaGtf$Start_Position, mrnaGtf$transcript_id, min)
     trEnd <- tapply(mrnaGtf$End_Position, mrnaGtf$transcript_id, max)
-    tr <- GRanges(unique(exonSeq), IRanges(trStart, trEnd))
+    tr <- GenomicRanges::GRanges(unique(exonSeq), IRanges::IRanges(trStart, trEnd))
     intron <- setdiff(tr, exon)
-    intron <- data.table(
-        Chromosome = sapply(strsplit(as.character(seqnames(intron)), "_"), "[", 1),
-        Start_Position = start(intron),
-        End_Position = end(intron)
+    intron <- data.table::data.table(
+        Chromosome = sapply(strsplit(as.character(GenomicRanges::seqnames(intron)), "_"), "[", 1),
+        Start_Position = GenomicRanges::start(intron),
+        End_Position = GenomicRanges::end(intron)
     )
     return(intron)
 
 }
 
-# collapse all exons and introns of transcripts to 1 annotation
+#' collapse all exons and introns of transcripts to 1 annotation
+#' @export
 collapse2tx <- function(gtf, trcol) {
 
     trStart <- tapply(gtf$Start_Position, gtf[[trcol]], min)
@@ -192,6 +194,7 @@ collapse2tx <- function(gtf, trcol) {
 
 }
 
+#' @export
 gtf2dna <- function(gtf, genome) {
 
     gtfRanges <- GenomicRanges::GRanges(
@@ -206,6 +209,7 @@ gtf2dna <- function(gtf, genome) {
 
 }
 
+#' @export
 utr5width <- function(gtfMrna) {
 
     firstCDSidx <- sapply(gtfMrna, function(.dt) min(which(.dt$Feature == "CDS")))
@@ -224,6 +228,7 @@ utr5width <- function(gtfMrna) {
 
 }
 
+#' @export
 cdsWidth <- function(gtfMrna) {
 
     cdsidx <- lapply(gtfMrna, function(.dt) which(.dt$Feature == "CDS"))
@@ -239,17 +244,18 @@ cdsWidth <- function(gtfMrna) {
 
 }
 
+#' @export
 filterOvTx <- function(exonGtf) {
 
     # find overlaps between exons 
-    exonRanges <- GRanges(exonGtf$Chromosome,  IRanges(exonGtf$Start_Position, exonGtf$End_Position))
-    exonOv <- findOverlaps(exonRanges, exonRanges)
+    exonRanges <- GenomicRanges::GRanges(exonGtf$Chromosome,  IRanges::IRanges(exonGtf$Start_Position, exonGtf$End_Position))
+    exonOv <- GenomicRanges::findOverlaps(exonRanges, exonRanges)
 
     # count overlaps with own gene or other genes for each tx
-    ovdt <- data.table(
-        tx = exonGtf$transcript_id[queryHits(exonOv)],
+    ovdt <- data.table::data.table(
+        tx = exonGtf$transcript_id[S4Vectors::queryHits(exonOv)],
         ov = ifelse(
-            exonGtf$gene_id[queryHits(exonOv)] == exonGtf$gene_id[subjectHits(exonOv)],
+            exonGtf$gene_id[S4Vectors::queryHits(exonOv)] == exonGtf$gene_id[S4Vectors::subjectHits(exonOv)],
             "own",
             "other"
         )
@@ -266,22 +272,23 @@ filterOvTx <- function(exonGtf) {
 
 }
 
+#' @export
 snpAnnotate <- function(snpdt, exonGtf) {
 
     # annotation vector
     r <- rep(NA_character_, nrow(snpdt))
 
     # compute gtf-snp overlap
-    snpRanges <- GRanges(snpdt$Chromosome, IRanges(snpdt$Start_Position, snpdt$Start_Position))
-    gtfRanges <- GRanges(exonGtf$Chromosome, IRanges(exonGtf$Start_Position, exonGtf$End_Position))
-    gtfSnpOv <- findOverlaps(gtfRanges, snpRanges)
+    snpRanges <- GenomicRanges::GRanges(snpdt$Chromosome, IRanges::IRanges(snpdt$Start_Position, snpdt$Start_Position))
+    gtfRanges <- GenomicRanges::GRanges(exonGtf$Chromosome, IRanges::IRanges(exonGtf$Start_Position, exonGtf$End_Position))
+    gtfSnpOv <- GenomicRanges::findOverlaps(gtfRanges, snpRanges)
     if (length(gtfSnpOv) == 0) return(r)
     
     # get number of snps per tx
-    txdt <- as.data.table(table(tx = exonGtf$transcript_id[queryHits(gtfSnpOv)]))
+    txdt <- data.table::as.data.table(table(tx = exonGtf$transcript_id[S4Vectors::queryHits(gtfSnpOv)]))
 
     # add info that will help decide which transcript to use per gene
-    exonGtf[, "width" := width(gtfRanges)]
+    exonGtf[, "width" := GenomicRanges::width(gtfRanges)]
     exonGtf[
         exonGtf[, list("txwidth" = sum(width)), by = "transcript_id"],
         "txwidth" := i.txwidth,
@@ -298,15 +305,16 @@ snpAnnotate <- function(snpdt, exonGtf) {
     finalGtf <- exonGtf[transcript_id %in% chosedt$tx]
 
     # assign a tx to each snp
-    finalRanges <-  GRanges(finalGtf$Chromosome, IRanges(finalGtf$Start_Position, finalGtf$End_Position))
-    snpGtfOv <- findOverlaps(snpRanges, finalRanges)
+    finalRanges <-  GenomicRanges::GRanges(finalGtf$Chromosome, IRanges::IRanges(finalGtf$Start_Position, finalGtf$End_Position))
+    snpGtfOv <- S4Vectors::findOverlaps(snpRanges, finalRanges)
     r[queryHits(snpGtfOv)] <- finalGtf$transcript_id[subjectHits(snpGtfOv)]
 
     return(r)
 
 }
 
-# given a gtf with the neccessary columns, it gets the variant classification of every possible mutation in the gtf's transcripts
+#' given a gtf with the neccessary columns, it gets the variant classification of every possible mutation in the gtf's transcripts
+#' @export
 pvarAnnotate <- function(gtf, genome) {
 
     # get variant classification for protein coding sites
@@ -334,13 +342,14 @@ pvarAnnotate <- function(gtf, genome) {
 
 }
 
+#' @export
 pvarNCannotate <- function(ncgtf, genome) {
 
     # get coding sites, their transcript of origin and strand
-    gtfRanges <- GRanges(ncgtf$Chromosome, IRanges(ncgtf$Start_Position, ncgtf$End_Position))
+    gtfRanges <- GenomicRanges::GRanges(ncgtf$Chromosome, IRanges::IRanges(ncgtf$Start_Position, ncgtf$End_Position))
     siteRanges <- unlist(slidingWindows(gtfRanges, 1))
-    siteRanges$transcript_id <- rep(ncgtf$transcript_id, width(gtfRanges))
-    siteRanges$codingStrand <- rep(ncgtf$Strand, width(gtfRanges))
+    siteRanges$transcript_id <- rep(ncgtf$transcript_id, GenomicRanges::width(gtfRanges))
+    siteRanges$codingStrand <- rep(ncgtf$Strand, GenomicRanges::width(gtfRanges))
 
     # get nucleotides in the + strand
     siteRanges$ref <- genome[siteRanges]
@@ -348,27 +357,27 @@ pvarNCannotate <- function(ncgtf, genome) {
     # get nucleotides in the coding strand
     siteRanges$codingRef <- siteRanges$ref
     reverse <- siteRanges$codingStrand == "-"
-    siteRanges$codingRef[reverse] <- reverseComplement(siteRanges$codingRef[reverse])
+    siteRanges$codingRef[reverse] <- Biostrings::reverseComplement(siteRanges$codingRef[reverse])
 
     # determine pyrimidine strand and get pyrimidine
     siteRanges$pyrimidineStrand <- ifelse(siteRanges$ref %in% c("C", "T"), "+", "-")
     siteRanges$pyrimidine <- siteRanges$ref
     reverse <- siteRanges$pyrimidineStrand == "-"
-    siteRanges$pyrimidine[reverse] <- reverseComplement(siteRanges$pyrimidine[reverse])
+    siteRanges$pyrimidine[reverse] <- Biostrings::reverseComplement(siteRanges$pyrimidine[reverse])
 
     # get all possible mutations in the examined sited oriented by the pyrimidine
     pmuts <- list(C = c("A", "G", "T"), T = c("A", "C", "G"))[as.character(siteRanges$pyrimidine)]
     pmutRanges <- siteRanges[rep(1:length(siteRanges), each = 3)]
-    pmutRanges$pyrimidineMut <- DNAStringSet(unlist(pmuts))
+    pmutRanges$pyrimidineMut <- Biostrings::DNAStringSet(unlist(pmuts))
 
     # get the mutation in the coding strand according to pyrimidine strand
     reverse <- pmutRanges$pyrimidineStrand != pmutRanges$codingStrand
     pmutRanges$codingMut <- pmutRanges$pyrimidineMut
-    pmutRanges$codingMut[reverse] <- reverseComplement(pmutRanges$codingMut[reverse])
+    pmutRanges$codingMut[reverse] <- Biostrings::reverseComplement(pmutRanges$codingMut[reverse])
 
     # convert to dta.table
     names(pmutRanges) <- 1:length(pmutRanges)
-    pmutdt <- data.table(as.data.frame(pmutRanges))
+    pmutdt <- data.table::data.table(as.data.frame(pmutRanges))
     pmutdt[, c("width", "strand", "end") := NULL]
     names(pmutdt)[2] <- "position"
 
@@ -376,25 +385,26 @@ pvarNCannotate <- function(ncgtf, genome) {
 
 }
 
-# assumes all transcripts have been checked to be divisible by 3!
+#' assumes all transcripts have been checked to be divisible by 3!
+#' @export
 pvarCDSannotate <- function(cdsgtf, genome) {
 
     # ensure order of this chromosome
     cdsgtf <- cdsgtf[order(Start_Position)]
 
     # get coding sites, their transcript of origin and strand
-    gtfRanges <- GRanges(cdsgtf$Chromosome, IRanges(cdsgtf$Start_Position, cdsgtf$End_Position))
-    siteRanges <- unlist(slidingWindows(gtfRanges, 1))
+    gtfRanges <- GenomicRanges::GRanges(cdsgtf$Chromosome, IRanges::IRanges(cdsgtf$Start_Position, cdsgtf$End_Position))
+    siteRanges <- unlist(GenomicRanges::slidingWindows(gtfRanges, 1))
     siteRanges$transcript_id <- rep(cdsgtf$transcript_id, width(gtfRanges))
     siteRanges$codingStrand <- rep(cdsgtf$Strand, width(gtfRanges))
 
     # split sites by transcript, if they are in negative strand reverse order so that everything is in transcription order
     siteRanges <- split(siteRanges, siteRanges$transcript_id)
     reverse <- sapply(siteRanges, function(gr) gr$codingStrand[1]) == "-"
-    siteRanges[reverse] <- endoapply(siteRanges[reverse], rev)
+    siteRanges[reverse] <- GenomicRanges::endoapply(siteRanges[reverse], rev)
 
     # get relative position of each site within its transcript CDS
-    relpos <- lapply(elementNROWS(siteRanges), function(l) 1:l)
+    relpos <- lapply(GenomicRanges::elementNROWS(siteRanges), function(l) 1:l)
     siteRanges <- unlist(siteRanges)
     siteRanges$relpos <- unlist(relpos)
 
@@ -404,13 +414,13 @@ pvarCDSannotate <- function(cdsgtf, genome) {
     # get nucleotides in the coding strand
     siteRanges$codingRef <- siteRanges$ref
     reverse <- siteRanges$codingStrand == "-"
-    siteRanges$codingRef[reverse] <- reverseComplement(siteRanges$codingRef[reverse])
+    siteRanges$codingRef[reverse] <- Biostrings::reverseComplement(siteRanges$codingRef[reverse])
 
     # determine pyrimidine strand and get pyrimidine
     siteRanges$pyrimidineStrand <- ifelse(siteRanges$ref %in% c("C", "T"), "+", "-")
     siteRanges$pyrimidine <- siteRanges$ref
     reverse <- siteRanges$pyrimidineStrand == "-"
-    siteRanges$pyrimidine[reverse] <- reverseComplement(siteRanges$pyrimidine[reverse])
+    siteRanges$pyrimidine[reverse] <- Biostrings::reverseComplement(siteRanges$pyrimidine[reverse])
 
     # get the codon and aminoacid that each site influences
     siteRanges$frame <- ((siteRanges$relpos + 2L) %% 3L) + 1L # gives 1 if in frame, 2 for one base out of frame and 3 for two bases out of frame
@@ -422,22 +432,22 @@ pvarCDSannotate <- function(cdsgtf, genome) {
         ),
         each = 3
     )
-    siteRanges$wtAA <- translate(siteRanges$codon, no.init.codon = TRUE)
+    siteRanges$wtAA <- Biostrings::translate(siteRanges$codon, no.init.codon = TRUE)
     
     # get all possible mutations in the examined sites oriented by the pyrimidine
     pmuts <- list(C = c("A", "G", "T"), T = c("A", "C", "G"))[as.character(siteRanges$pyrimidine)]
     pmutRanges <- siteRanges[rep(1:length(siteRanges), each = 3)]
-    pmutRanges$pyrimidineMut <- DNAStringSet(unlist(pmuts))
+    pmutRanges$pyrimidineMut <- Biostrings::DNAStringSet(unlist(pmuts))
 
     # get the mutation in the coding strand according to pyrimidine strand
     reverse <- pmutRanges$pyrimidineStrand != pmutRanges$codingStrand
     pmutRanges$codingMut <- pmutRanges$pyrimidineMut
-    pmutRanges$codingMut[reverse] <- reverseComplement(pmutRanges$codingMut[reverse])
+    pmutRanges$codingMut[reverse] <- Biostrings::reverseComplement(pmutRanges$codingMut[reverse])
 
     # get the mutated codon and mutated aminoacid according to mutation in coding strand
     pmutRanges$mutCodon <- pmutRanges$codon
-    subseq(pmutRanges$mutCodon, pmutRanges$frame, pmutRanges$frame) <- pmutRanges$codingMut
-    pmutRanges$mutAA <- translate(pmutRanges$mutCodon, no.init.codon = TRUE)
+    Biostrings::subseq(pmutRanges$mutCodon, pmutRanges$frame, pmutRanges$frame) <- pmutRanges$codingMut
+    pmutRanges$mutAA <- Biostrings::translate(pmutRanges$mutCodon, no.init.codon = TRUE)
 
     # determine the type of mutation
     pmutRanges$type <- rep("missense", length(siteRanges))
@@ -447,7 +457,7 @@ pvarCDSannotate <- function(cdsgtf, genome) {
 
     # convert to dta.table
     names(pmutRanges) <- 1:length(pmutRanges)
-    pmutdt <- data.table(as.data.frame(pmutRanges))
+    pmutdt <- data.table::data.table(as.data.frame(pmutRanges))
     pmutdt[, c("width", "strand", "end") := NULL]
     names(pmutdt)[2] <- "position"
 
