@@ -1,3 +1,5 @@
+#' @import data.table
+
 #' @export
 infoExtract <- function(gtf, infoColName, key, type) {
 
