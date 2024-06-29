@@ -212,6 +212,49 @@ gtf2dna <- function(gtf, genome) {
 }
 
 #' @export
+getTxSeq <- function(tx, rnaGtf, genome) {
+
+    # get the coding strand seq of the parent tx of each target record
+    gtfRna <- split(gtf2dna(rnaGtf, genome), rnaGtf$transcript_id)
+    gtfRna <- Biostrings::DNAStringSet(lapply(gtfRna, unlist))
+    rna <- as.character(gtfRna[tx])
+
+    return(rna)
+
+}
+
+expandRange <- function(.start, .end, .strand) {
+
+    isPlus <- .strand == "+"
+    L <- mapply(":", ifelse(isPlus, .start, .end), ifelse(isPlus, .end, .start), SIMPLIFY = FALSE)
+
+    return(L)
+
+}
+
+#' @export
+relativize <- function(tx, .start, .end, .strand, rnaGtf) {
+
+    gtfList <- split(rnaGtf, rnaGtf$transcript_id)
+    mrnaIdxs <- lapply(
+        gtfList,
+        function(.dt) {
+            absolute <- expandRange(.dt$Start_Position, .dt$End_Position, .dt$Strand)
+            absolute <- unlist(absolute)
+            setNames(1:length(absolute), absolute)
+        }
+    )
+    mrnaIdxs <- mrnaIdxs[tx]
+
+    isPlus <- .strand == "+"
+    start.rel <- mapply(function(ii, .s) ii[.s], mrnaIdxs, as.character(ifelse(isPlus, .start, .end)))
+    end.rel <- mapply(function(ii, .e) ii[.e], mrnaIdxs, as.character(ifelse(isPlus, .end, .start)))
+
+    return(data.table(start.rel = unlist(start.rel), end.rel = unlist(end.rel)))
+
+}
+
+#' @export
 utr5width <- function(gtfMrna) {
 
     firstCDSidx <- sapply(gtfMrna, function(.dt) min(which(.dt$Feature == "CDS")))
