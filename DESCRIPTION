@@ -15,4 +15,5 @@ Imports:
     data.table,
     GenomicRanges,
     IRanges,
-    S4Vectors
+    S4Vectors,
+    dplyr

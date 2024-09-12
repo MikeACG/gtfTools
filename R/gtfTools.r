@@ -1,4 +1,22 @@
 #' @import data.table
+#' @importFrom dplyr %>%
+
+#' @export
+gtfLoad <- function(gtfdb, .cols, .chr = "all", utx = "all") {
+
+    chrQuery <- gtfdb %>% dplyr::filter(Chromosome %in% .chr)
+    if (.chr[1] == "all") chrQuery <- mafdb
+
+    txQuery <- excludeQuery %>% dplyr::filter(transcript_id %in% utx)
+    if (utx[1] == "all") txQuery <- excludeQuery
+
+    gtfdt <- txQuery %>%
+        dplyr::select(dplyr::all_of(.cols)) %>%
+        dplyr::collect()
+
+    return(gtfdt)
+
+}
 
 #' @export
 infoExtract <- function(gtf, infoColName, key, type) {
@@ -441,15 +459,15 @@ pvarCDSannotate <- function(cdsgtf, genome) {
     gtfRanges <- GenomicRanges::GRanges(cdsgtf$Chromosome, IRanges::IRanges(cdsgtf$Start_Position, cdsgtf$End_Position))
     siteRanges <- unlist(GenomicRanges::slidingWindows(gtfRanges, 1))
     siteRanges$transcript_id <- rep(cdsgtf$transcript_id, width(gtfRanges))
-    siteRanges$codingStrand <- rep(cdsgtf$Strand, width(gtfRanges))
+    siteRanges$codingStrand <- rep(cdsgtf$Strand, GenomicRanges::width(gtfRanges))
 
     # split sites by transcript, if they are in negative strand reverse order so that everything is in transcription order
     siteRanges <- split(siteRanges, siteRanges$transcript_id)
     reverse <- sapply(siteRanges, function(gr) gr$codingStrand[1]) == "-"
-    siteRanges[reverse] <- GenomicRanges::endoapply(siteRanges[reverse], rev)
+    siteRanges[reverse] <- S4Vectors::endoapply(siteRanges[reverse], rev)
 
     # get relative position of each site within its transcript CDS
-    relpos <- lapply(GenomicRanges::elementNROWS(siteRanges), function(l) 1:l)
+    relpos <- lapply(IRanges::elementNROWS(siteRanges), function(l) 1:l)
     siteRanges <- unlist(siteRanges)
     siteRanges$relpos <- unlist(relpos)
 
