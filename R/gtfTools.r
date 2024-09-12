@@ -7,8 +7,8 @@ gtfLoad <- function(gtfdb, .cols, .chr = "all", utx = "all") {
     chrQuery <- gtfdb %>% dplyr::filter(Chromosome %in% .chr)
     if (.chr[1] == "all") chrQuery <- mafdb
 
-    txQuery <- excludeQuery %>% dplyr::filter(transcript_id %in% utx)
-    if (utx[1] == "all") txQuery <- excludeQuery
+    txQuery <- chrQuery %>% dplyr::filter(transcript_id %in% utx)
+    if (utx[1] == "all") txQuery <- chrQuery
 
     gtfdt <- txQuery %>%
         dplyr::select(dplyr::all_of(.cols)) %>%
