@@ -369,7 +369,7 @@ snpAnnotate <- function(snpdt, exonGtf) {
 
     # assign a tx to each snp
     finalRanges <-  GenomicRanges::GRanges(finalGtf$Chromosome, IRanges::IRanges(finalGtf$Start_Position, finalGtf$End_Position))
-    snpGtfOv <- S4Vectors::findOverlaps(snpRanges, finalRanges)
+    snpGtfOv <- GenomicRanges::findOverlaps(snpRanges, finalRanges)
     r[queryHits(snpGtfOv)] <- finalGtf$transcript_id[subjectHits(snpGtfOv)]
 
     return(r)
