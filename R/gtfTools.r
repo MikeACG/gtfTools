@@ -386,7 +386,7 @@ pvarNCannotate <- function(ncgtf, .genome) {
 
     # get coding sites, their transcript of origin and strand
     gtfRanges <- GenomicRanges::GRanges(ncgtf$Chromosome, IRanges::IRanges(ncgtf$Start_Position, ncgtf$End_Position))
-    siteRanges <- unlist(slidingWindows(gtfRanges, 1))
+    siteRanges <- IRanges::unlist(slidingWindows(gtfRanges, 1))
     siteRanges$transcript_id <- rep(ncgtf$transcript_id, GenomicRanges::width(gtfRanges))
     siteRanges$codingStrand <- rep(ncgtf$Strand, GenomicRanges::width(gtfRanges))
 
@@ -444,11 +444,10 @@ pvarCDSannotate <- function(cdsgtf, .genome) {
 
     # get relative position of each site within its transcript CDS
     relpos <- lapply(IRanges::elementNROWS(siteRanges), function(l) 1:l)
-    siteRanges <- unlist(siteRanges)
+    siteRanges <- IRanges::unlist(siteRanges)
     siteRanges$relpos <- unlist(relpos)
 
     # get nucleotides in the + strand
-    print(siteRanges)
     siteRanges$ref <- .genome[siteRanges]
 
     # get nucleotides in the coding strand
