@@ -354,27 +354,27 @@ snpAnnotateTx <- function(snpdt, .egtfdt) {
 
 #' given a gtf with the neccessary columns, it gets the variant classification of every possible mutation in the gtf's transcripts
 #' @export
-pvarAnnotate <- function(gtf, genome) {
+pvarAnnotate <- function(gtf, .genome) {
 
     # get variant classification for protein coding sites
     cdsgtf <- gtf[Feature %in% c("CDS",  "stop_codon")]
-    cdspmutdt <- pvarCDSannotate(cdsgtf, genome)
+    cdspmutdt <- pvarCDSannotate(cdsgtf, .genome)
     cdspmutdt[, c("relpos", "frame", "codon", "wtAA", "mutCodon", "mutAA") := NULL]
     
     # get variant classification for 5'UTR sites
     mrnagtf <- rnaify(gtf, TRUE)
     utr5gtf <- get5utr(mrnagtf)
-    utr5pmutdt <- pvarNCannotate(utr5gtf, genome)
+    utr5pmutdt <- pvarNCannotate(utr5gtf, .genome)
     utr5pmutdt$type <- rep("utr5", nrow(utr5pmutdt))
 
     # get variant classification for 3'UTR sites
     utr3gtf <- get3utr(mrnagtf)
-    utr3pmutdt <- pvarNCannotate(utr3gtf, genome)
+    utr3pmutdt <- pvarNCannotate(utr3gtf, .genome)
     utr3pmutdt$type <- rep("utr3", nrow(utr3pmutdt))
 
     # get variant classification for non-coding sites
     ncgtf <- gtf[Feature == "exon" & gene_type != "protein_coding"]
-    ncpmutdt <- pvarNCannotate(ncgtf, genome)
+    ncpmutdt <- pvarNCannotate(ncgtf, .genome)
     ncpmutdt$type <- ncgtf$gene_type[match(ncpmutdt$transcript_id, ncgtf$transcript_id)]
 
     return(rbind(cdspmutdt, utr5pmutdt, utr3pmutdt, ncpmutdt))
@@ -382,7 +382,7 @@ pvarAnnotate <- function(gtf, genome) {
 }
 
 #' @export
-pvarNCannotate <- function(ncgtf, genome) {
+pvarNCannotate <- function(ncgtf, .genome) {
 
     # get coding sites, their transcript of origin and strand
     gtfRanges <- GenomicRanges::GRanges(ncgtf$Chromosome, IRanges::IRanges(ncgtf$Start_Position, ncgtf$End_Position))
@@ -391,7 +391,7 @@ pvarNCannotate <- function(ncgtf, genome) {
     siteRanges$codingStrand <- rep(ncgtf$Strand, GenomicRanges::width(gtfRanges))
 
     # get nucleotides in the + strand
-    siteRanges$ref <- genome[siteRanges]
+    siteRanges$ref <- .genome[siteRanges]
 
     # get nucleotides in the coding strand
     siteRanges$codingRef <- siteRanges$ref
@@ -426,7 +426,7 @@ pvarNCannotate <- function(ncgtf, genome) {
 
 #' assumes all transcripts have been checked to be divisible by 3!
 #' @export
-pvarCDSannotate <- function(cdsgtf, genome) {
+pvarCDSannotate <- function(cdsgtf, .genome) {
 
     # ensure order of this chromosome
     cdsgtf <- cdsgtf[order(Start_Position)]
@@ -448,7 +448,8 @@ pvarCDSannotate <- function(cdsgtf, genome) {
     siteRanges$relpos <- unlist(relpos)
 
     # get nucleotides in the + strand
-    siteRanges$ref <- genome[siteRanges]
+    print(siteRanges)
+    siteRanges$ref <- .genome[siteRanges]
 
     # get nucleotides in the coding strand
     siteRanges$codingRef <- siteRanges$ref
