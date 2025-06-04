@@ -411,8 +411,8 @@ pvarNCannotate <- function(ncgtf, .genome) {
     pmutRanges <- siteRanges[rep(1:length(siteRanges), each = 3)]
     pmutRanges$pyrimidineMut <- Biostrings::DNAStringSet(unlist(pmuts))
     reverse <- rep(reverse, each = 3)
-    siteRanges$mut <- siteRanges$pyrimidineMut
-    siteRanges$mut[reverse] <- Biostrings::reverseComplement(siteRanges$mut[reverse])
+    pmutRanges$mut <- pmutRanges$pyrimidineMut
+    pmutRanges$mut[reverse] <- Biostrings::reverseComplement(pmutRanges$mut[reverse])
 
     # get the mutation in the coding strand according to pyrimidine strand
     reverse <- pmutRanges$pyrimidineStrand != pmutRanges$codingStrand
@@ -483,8 +483,8 @@ pvarCDSannotate <- function(cdsgtf, .genome) {
     pmutRanges <- siteRanges[rep(1:length(siteRanges), each = 3)]
     pmutRanges$pyrimidineMut <- Biostrings::DNAStringSet(unlist(pmuts))
     reverse <- rep(reverse, each = 3)
-    siteRanges$mut <- siteRanges$pyrimidineMut
-    siteRanges$mut[reverse] <- Biostrings::reverseComplement(siteRanges$mut[reverse])
+    pmutRanges$mut <- pmutRanges$pyrimidineMut
+    pmutRanges$mut[reverse] <- Biostrings::reverseComplement(pmutRanges$mut[reverse])
 
     # get the mutation in the coding strand according to pyrimidine strand
     reverse <- pmutRanges$pyrimidineStrand != pmutRanges$codingStrand
