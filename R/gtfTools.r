@@ -307,36 +307,29 @@ cdsWidth <- function(gtfMrna) {
 
 }
 
-#' @export
-filterOvTx <- function(exonGtf) {
+#' @export'
+# from a gtf with the relevant ranges, it chooses 1 transcript per gene
+# based on evidence level, length and if ties after these 2 conditions, by whichever appears first
+chooseTx <- function(.gtfdt) {
 
-    # find overlaps between exons 
-    exonRanges <- GenomicRanges::GRanges(exonGtf$Chromosome,  IRanges::IRanges(exonGtf$Start_Position, exonGtf$End_Position))
-    exonOv <- GenomicRanges::findOverlaps(exonRanges, exonRanges)
+    .gtfdt[, "width" := End_Position - Start_Position + 1L]
+    txdt <- .gtfdt[, list("width" = sum(width)), by = "transcript_id"]
+    txdt[.gtfdt, ':=' ("gene_id" = i.gene_id, "level" = i.level), on = "transcript_id"]
 
-    # count overlaps with own gene or other genes for each tx
-    ovdt <- data.table::data.table(
-        tx = exonGtf$transcript_id[S4Vectors::queryHits(exonOv)],
-        ov = ifelse(
-            exonGtf$gene_id[S4Vectors::queryHits(exonOv)] == exonGtf$gene_id[S4Vectors::subjectHits(exonOv)],
-            "own",
-            "other"
-        )
-    )
-    count <- table(
-        tx = factor(ovdt$tx, unique(exonGtf$transcript_id)),
-        ov = factor(ovdt$ov, c("own", "other"))
-    )
+    bestdt <- txdt[, list("maxLevel" = min(level), "maxWidth" = max(width)), by = "gene_id"]
+    txdt[bestdt, ':=' ("maxLevel" = i.maxLevel, "maxWidth" = i.maxWidth), on = "gene_id"]
+    chosedt <- txdt[level == maxLevel]
+    chosedt <- txdt[width == maxWidth]
+    chosedt <- chosedt[, head(.SD, 1), by = "gene_id"]
 
-    # filter tx that overlap with tx from other genes
-    filterGtf <- exonGtf[transcript_id %in% rownames(count)[count[, "other"] == 0L]]
-
-    return(filterGtf)
+    .gtfdt[, "width" := NULL]
+    return(.gtfdt[transcript_id %in% chosedt$transcript_id])
 
 }
 
 #' @export
-snpAnnotate <- function(snpdt, exonGtf) {
+# takes a GTF of only exons with 1 transcript per gene
+snpAnnotateTx <- function(snpdt, .egtfdt) {
 
     # annotation vector
     r <- rep(NA_character_, nrow(snpdt))
@@ -347,31 +340,14 @@ snpAnnotate <- function(snpdt, exonGtf) {
     gtfSnpOv <- GenomicRanges::findOverlaps(gtfRanges, snpRanges)
     if (length(gtfSnpOv) == 0) return(r)
     
-    # get number of snps per tx
-    txdt <- data.table::as.data.table(table(tx = exonGtf$transcript_id[S4Vectors::queryHits(gtfSnpOv)]))
+    ovdt <- data.table::data.table(
+        "query" = queryHits(gtfSnpOv),
+        "transcript_id" = .egtfdt[subjectHits(gtfSnpOv)]$transcript_id
+    )
+    ovdt <- ovdt[!(query %in% query[duplicated(query)])] # do not annotate mutations hitting >1 gene
 
-    # add info that will help decide which transcript to use per gene
-    exonGtf[, "width" := GenomicRanges::width(gtfRanges)]
-    exonGtf[
-        exonGtf[, list("txwidth" = sum(width)), by = "transcript_id"],
-        "txwidth" := i.txwidth,
-        on = "transcript_id"
-    ]
-    txdt[exonGtf, ':=' ("gene" = i.gene_id, "level" = i.level, "width" = i.txwidth), on = c("tx" = "transcript_id")]
     
-    # get best snp number, evidence level and length across tx of each gene
-    bestdt <- txdt[, list("maxN" = max(N), "maxLevel" = min(level), "maxWidth" = max(width)), by = "gene"]
-    txdt[bestdt, ':=' ("maxN" = i.maxN, "maxLevel" = i.maxLevel, "maxWidth" = i.maxWidth), on = "gene"]
-
-    # choose 1 tx per gene
-    chosedt <- txdt[N == maxN & level == maxLevel & width == maxWidth, list("tx" = head(tx, 1)), by = "gene"]
-    finalGtf <- exonGtf[transcript_id %in% chosedt$tx]
-
-    # assign a tx to each snp
-    finalRanges <-  GenomicRanges::GRanges(finalGtf$Chromosome, IRanges::IRanges(finalGtf$Start_Position, finalGtf$End_Position))
-    snpGtfOv <- GenomicRanges::findOverlaps(snpRanges, finalRanges)
-    r[queryHits(snpGtfOv)] <- finalGtf$transcript_id[subjectHits(snpGtfOv)]
-
+    r[ovdt$query] <- ovdt$transcript_id
     return(r)
 
 }
