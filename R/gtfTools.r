@@ -401,7 +401,7 @@ pvarNCannotate <- function(ncgtf, .genome) {
     siteRanges$codingRef[reverse] <- Biostrings::reverseComplement(siteRanges$codingRef[reverse])
 
     # determine pyrimidine strand and get pyrimidine
-    siteRanges$pyrimidineStrand <- ifelse(siteRanges$ref %in% c("C", "T"), "+", "-")
+    siteRanges$pyrimidineStrand <- ifelse(as.character(siteRanges$ref) %in% c("C", "T"), "+", "-")
     siteRanges$pyrimidine <- siteRanges$ref
     reverse <- siteRanges$pyrimidineStrand == "-"
     siteRanges$pyrimidine[reverse] <- Biostrings::reverseComplement(siteRanges$pyrimidine[reverse])
@@ -458,7 +458,7 @@ pvarCDSannotate <- function(cdsgtf, .genome) {
     siteRanges$codingRef[reverse] <- Biostrings::reverseComplement(siteRanges$codingRef[reverse])
 
     # determine pyrimidine strand and get pyrimidine
-    siteRanges$pyrimidineStrand <- ifelse(siteRanges$ref %in% c("C", "T"), "+", "-")
+    siteRanges$pyrimidineStrand <- ifelse(as.character(siteRanges$ref) %in% c("C", "T"), "+", "-")
     siteRanges$pyrimidine <- siteRanges$ref
     reverse <- siteRanges$pyrimidineStrand == "-"
     siteRanges$pyrimidine[reverse] <- Biostrings::reverseComplement(siteRanges$pyrimidine[reverse])
