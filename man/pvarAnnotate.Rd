@@ -4,7 +4,7 @@
 \alias{pvarAnnotate}
 \title{given a gtf with the neccessary columns, it gets the variant classification of every possible mutation in the gtf's transcripts}
 \usage{
-pvarAnnotate(gtf, genome)
+pvarAnnotate(gtf, .genome)
 }
 \description{
 given a gtf with the neccessary columns, it gets the variant classification of every possible mutation in the gtf's transcripts

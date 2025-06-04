@@ -4,7 +4,7 @@
 \alias{pvarCDSannotate}
 \title{assumes all transcripts have been checked to be divisible by 3!}
 \usage{
-pvarCDSannotate(cdsgtf, genome)
+pvarCDSannotate(cdsgtf, .genome)
 }
 \description{
 assumes all transcripts have been checked to be divisible by 3!
