@@ -307,7 +307,7 @@ cdsWidth <- function(gtfMrna) {
 
 }
 
-#' @export'
+#' @export
 # from a gtf with the relevant ranges, it chooses 1 transcript per gene
 # based on evidence level, length and if ties after these 2 conditions, by whichever appears first
 chooseTx <- function(.gtfdt) {
