@@ -339,7 +339,7 @@ snpAnnotateTx <- function(snpdt, .egtfdt) {
     # compute gtf-snp overlap
     snpRanges <- GenomicRanges::GRanges(snpdt$Chromosome, IRanges::IRanges(snpdt$Start_Position, snpdt$Start_Position))
     gtfRanges <- GenomicRanges::GRanges(exonGtf$Chromosome, IRanges::IRanges(exonGtf$Start_Position, exonGtf$End_Position))
-    gtfSnpOv <- GenomicRanges::findOverlaps(gtfRanges, snpRanges)
+    gtfSnpOv <- GenomicRanges::findOverlaps(snpRanges, gtfRanges)
     if (length(gtfSnpOv) == 0) return(r)
     
     ovdt <- data.table::data.table(
