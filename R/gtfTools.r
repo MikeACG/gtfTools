@@ -379,7 +379,7 @@ pvarAnnotate <- function(gtf, .genome) {
     ncpmutdt <- pvarNCannotate(ncgtf, .genome)
     ncpmutdt$type <- ncgtf$gene_type[match(ncpmutdt$transcript_id, ncgtf$transcript_id)]
 
-    return(rbind(cdspmutdt, utr5pmutdt, utr3pmutdt, ncpmutdt))
+    return(rbind(cdspmutdt, utr5pmutdt, utr3pmutdt, ncpmutdt, fill = TRUE))
 
 }
 
