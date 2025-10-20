@@ -361,7 +361,7 @@ pvarAnnotate <- function(gtf, .genome) {
     # get variant classification for protein coding sites
     cdsgtf <- gtf[Feature %in% c("CDS",  "stop_codon")]
     cdspmutdt <- pvarCDSannotate(cdsgtf, .genome)
-    cdspmutdt[, c("relpos", "frame", "codon", "wtAA", "mutCodon", "mutAA") := NULL]
+    #cdspmutdt[, c("relpos", "frame", "codon", "wtAA", "mutCodon", "mutAA") := NULL]
     
     # get variant classification for 5'UTR sites
     mrnagtf <- rnaify(gtf, TRUE)
