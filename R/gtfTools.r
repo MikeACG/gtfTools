@@ -321,7 +321,7 @@ chooseTx <- function(.gtfdt) {
     bestdt <- txdt[, list("maxLevel" = min(level), "maxWidth" = max(width)), by = "gene_id"]
     txdt[bestdt, ':=' ("maxLevel" = i.maxLevel, "maxWidth" = i.maxWidth), on = "gene_id"]
     chosedt <- txdt[level == maxLevel]
-    chosedt <- txdt[width == maxWidth]
+    chosedt <- chosedt[width == maxWidth]
     chosedt <- chosedt[, head(.SD, 1), by = "gene_id"]
 
     .gtfdt[, "width" := NULL]
